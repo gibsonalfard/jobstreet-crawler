@@ -1,0 +1,14 @@
+version: "3.3"
+
+services:
+  jobstreet:
+    restart: always      
+    image: "jobstreet_crawler:1"
+    container_name : "jobstreet-crawler"
+    build: .
+    shm_size: '2gb'
+    ports:
+      - 5050:5050
+    environment:
+      - THREADS_NUMBER=1
+      - PORT=5050

@@ -1,0 +1,10 @@
+docker rm -f youtube
+docker-compose build
+
+docker run -d --name youtube_new -p 4545:4545 -e PORT=4545 --restart always youtube:1
+
+set mobile
+https://m.youtube.com/?persist_app=1&app=m
+
+set desktop
+https://m.youtube.com/?persist_app=0&app=dekstop
