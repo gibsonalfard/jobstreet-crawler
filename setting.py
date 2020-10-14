@@ -21,12 +21,12 @@ import functools
 import threading
 import mysql.connector
 
-# mongoConfig = {
-# 	"username": os.environ['MONGO_USERNAME'],
-# 	"password": os.environ['MONGO_PASSWORD'],
-# 	"server": os.environ['MONGO_HOST'],
-# 	"port": os.environ['MONGO_PORT']
-# }
+mongoConfig = {
+	"username": os.environ['MONGO_USERNAME'],
+	"password": os.environ['MONGO_PASSWORD'],
+	"server": os.environ['MONGO_HOST'],
+	"port": os.environ['MONGO_PORT']
+}
 
 # mysqlConfig = {
 # 	"username": os.environ['MYSQL_USERNAME'],

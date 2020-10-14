@@ -1,6 +1,22 @@
 version: "3.3"
 
+networks:
+  jobstreet-network:
+  
+volumes:
+  mongo-volume:
+
 services:
+  mongodb_jobstreet:
+    container_name: mongodb_jobstreet
+    image: mongo
+    volumes: 
+      - mongo-volume:/data/db
+    ports: 
+      - 27024:27017
+    networks: 
+      - jobstreet-network
+
   jobstreet:
     restart: always      
     image: "jobstreet_crawler:1"
@@ -9,6 +25,14 @@ services:
     shm_size: '2gb'
     ports:
       - 5050:5050
+    networks: 
+      - jobstreet-network
     environment:
+      - MONGO_HOST=mongodb_jobstreet
+      - MONGO_PORT=27017
+      - MONGO_USERNAME=
+      - MONGO_PASSWORD=
       - THREADS_NUMBER=1
       - PORT=5050
+    depends_on: 
+      - mongodb_jobstreet

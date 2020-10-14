@@ -5,9 +5,23 @@ CORS(app)
 
 openport = os.environ['PORT']
 
-def convertToNum(value):
-	value = value.replace(",","")
-	return int(value)
+mongourl = "mongodb://{server}:{port}/".format(
+    server=mongoConfig["server"],
+    port=mongoConfig["port"])
+client = MongoClient(mongourl)
+db = client.jobstreet_db
+
+def insertMongo(collection="job-vacancy", data="{}"):
+	global db
+
+	try:
+		# Insert Data to Collections
+		dbCollect = db[collection]
+		dbCollect.insert_many(data, ordered=False)
+
+		# print("Inserted this : ", processId)
+	except Exception as ex:
+		print("ERROR MONGODB INSERT - ", ex)
 
 def getVacancyDetail(url, options):
 	driver = webdriver.Chrome(chrome_options=options)
@@ -136,8 +150,14 @@ def getVacancyDetail(url, options):
 				comLocationMap = driver.find_element_by_xpath(".//a[@id='view_larger_map']").get_attribute("href")
 			except:
 				pass
+			
+			# Make ID for Data
+			jobId_raw = url.split("?")[0]
+			jobId_raw = jobId_raw.split("/")[-1]
+			jobId = hashlib.md5(jobId_raw.encode())
 
 			job = {
+				"jobId": jobId.hexdigest(),
 				"jobTitle": jobTitle,
 				"experience": {
 					"years": yearExperience,
@@ -167,7 +187,7 @@ def getVacancyDetail(url, options):
 		except Exception as e:
 			error += 1
 			print("Error Getting Detail --- Try -", error)
-			print(e)
+			# print(e)
 
 			driver.execute_script('window.localStorage.clear();')
 			driver.close()
@@ -186,7 +206,7 @@ def getVacancyDetail(url, options):
 
 	return job
 
-def getJobVacancy(url, start, end):
+def getJobVacancy(baseUrl, page):
 	chrome_options = webdriver.ChromeOptions()
 	chrome_options.add_argument('--no-sandbox')
 	chrome_options.add_argument('--headless')
@@ -206,71 +226,82 @@ def getJobVacancy(url, start, end):
 
 	driver = webdriver.Chrome(chrome_options=chrome_options)
 
+	url = baseUrl
 	print(url)
 	driver.get(url)
-
+	index = 1
 	jobs = []
 
-	try:
-		condition = True
-		while(condition):
-			try:
-				driver.find_element_by_tag_name('body').send_keys(
-					Keys.END)  # Scroll to Buttom of the page
-				WebDriverWait(driver, 10).until(
-					EC.presence_of_element_located((By.XPATH, 
-					".//div[@id='job_listing_panel']"))
-				)
-				condition = False
-			except:
-				print("Error - Cannot Get Listing")
-				driver.execute_script('window.localStorage.clear();')
-				driver.close()
-				driver.quit()
+	while(index <= page):
+		try:
+			condition = True
+			while(condition):
+				try:
+					driver.find_element_by_tag_name('body').send_keys(
+						Keys.END)  # Scroll to Buttom of the page
+					WebDriverWait(driver, 10).until(
+						EC.presence_of_element_located((By.XPATH, 
+						".//div[@id='job_listing_panel']"))
+					)
+					condition = False
+				except:
+					print("Error - Cannot Get Listing")
+					driver.execute_script('window.localStorage.clear();')
+					driver.close()
+					driver.quit()
 
-				driver = webdriver.Chrome(chrome_options=chrome_options)
-				driver.get(url)
-
-		jobLinks = driver.find_elements_by_xpath(".//div[@class='position-title header-text']/a")
-
-		i = 0
-		length = len(jobLinks)
-		while(i < length):
-			link = jobLinks[i]
-
-			driver.find_element_by_tag_name('body').send_keys(
-                Keys.END)  # Scroll to Buttom of the page
-			length = len(jobLinks)
-
-			job = getVacancyDetail(link.get_attribute("href"), chrome_options)
-
-			if(job):
-				jobs.append(job)
+					driver = webdriver.Chrome(chrome_options=chrome_options)
+					driver.get(url)
 
 			jobLinks = driver.find_elements_by_xpath(".//div[@class='position-title header-text']/a")
-			i += 1
+
+			i = 0
+			length = len(jobLinks)
+			while(i < length):
+				link = jobLinks[i]
+
+				driver.find_element_by_tag_name('body').send_keys(
+					Keys.END)  # Scroll to Buttom of the page
+				length = len(jobLinks)
+
+				job = getVacancyDetail(link.get_attribute("href"), chrome_options)
+
+				if(job):
+					jobs.append(job)
+
+				jobLinks = driver.find_elements_by_xpath(".//div[@class='position-title header-text']/a")
+				i += 1
+			
+		except Exception as ex:
+			print("ERROR-GETTING-DATA :")
+			# print(ex)
 		
-	except Exception as ex:
-		print("ERROR-GETTING-DATA :")
-		print(ex)
+		# Next Page
+		index += 1
+		url = baseUrl + "/{page}/".format(page=index)
+		print(url)
+		driver.get(url)
 
 	print(jobs)
+	data = jobs
+
+	if(len(jobs) > 0):
+		insertMongo("job-vacancy", jobs)
 	
 	driver.execute_script('window.localStorage.clear();')
 	driver.close()
 	driver.quit()
 
-	return jobs
+	return data
 
 @app.route('/job', methods=['GET'])
 def mainRMQ():	
-	start = int(request.args["start"]) if 'start' in request.args else 1
-	end = int(request.args["end"]) if 'end' in request.args else 1
+	page = int(request.args["page"]) if 'page' in request.args else 1
 
 	url = "https://www.jobstreet.co.id/id/job-search/job-vacancy.php"
-	inner = getJobVacancy(url, start, end)
+	inner = getJobVacancy(url, page)
 
-	return json.dumps(inner)
+	return json.dumps({"status":1})
 
 
 
