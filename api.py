@@ -20,19 +20,28 @@ def getVacancyDetail(url, options):
 	comName = ""
 	comPicture = ""
 	comLocation = ""
+	comSite = ""
 	jobTitle = ""
 	yearExperience = ""
 	experiencePosition = ""
-
-	try:
-		driver.find_element_by_xpath(".//div[@class='content-error text-center']")
-		print("Tidak Error")
-		return job
-	except:
-		pass
+	jobDesc = ""
+	workTime = ""
+	dresscode = ""
+	tunjangan = []
+	language = ""
+	comSize = ""
+	processTime = ""
+	comIndustry = ""
 
 	error  = 0
 	while(error < 10):
+		try:
+			driver.find_element_by_xpath(".//div[@class='content-error text-center']")
+			print("Halaman Error")
+			break
+		except:
+			pass
+
 		try:
 			driver.find_element_by_tag_name('body').send_keys(
 						Keys.END)  # Scroll to Buttom of the page
@@ -40,7 +49,16 @@ def getVacancyDetail(url, options):
 			# Get Job Information
 			jobTitle = driver.find_element_by_xpath(".//h1[@id='position_title']").text
 			experience = driver.find_element_by_xpath(".//p[@id='years_of_experience']//span[@id='years_of_experience']").text
-			yearExperience = experience.split(" ")[1]
+			try:
+				yearExperience = int(experience.split(" ")[1])
+			except:
+				yearExperience = experience.split(" tahun")[0]
+
+				try:
+					yearExperience = int(yearExperience.split(" ")[-1])
+				except:
+					print("ERROR - ", experience)
+
 			experiencePosition = experience.replace("Min {year} tahun ".format(year=yearExperience), "")
 
 			# Get Company Information
@@ -54,17 +72,77 @@ def getVacancyDetail(url, options):
 			except:
 				pass
 
+			# Get Job Description
+			try:
+				jobDesc = driver.find_element_by_xpath(".//div[@id='job_description']").text
+			except:
+				pass
+
+			# Get Recruit Info
+			try:
+				try:
+					processTime = driver.find_element_by_xpath(".//p[@id='fast_average_processing_time']").text
+				except:
+					pass
+
+				try:
+					comIndustry = driver.find_element_by_xpath(".//p[@id='company_industry']").text
+				except:
+					pass
+				
+				try:
+					comSite = driver.find_element_by_xpath(".//a[@id='company_website']").get_attribute("href")
+				except:
+					pass
+				
+				try:
+					comSize = driver.find_element_by_xpath(".//p[@id='company_size']").text
+				except:
+					pass
+
+				try:
+					workTime = driver.find_element_by_xpath(".//p[@id='work_environment_waktu_bekerja']").text
+				except:
+					pass
+				
+				try:
+					dresscode = driver.find_element_by_xpath(".//p[@id='work_environment_gaya_berpakaian']").text
+				except:
+					pass
+
+				try:
+					tunjangan_raw = driver.find_element_by_xpath(".//p[@id='work_environment_tunjangan']").text
+					tunjangan = tunjangan_raw.split(", ")
+				except:
+					pass
+
+				try:
+					language = driver.find_element_by_xpath(".//p[@id='work_environment_bahasa_yang_digunakan']").text
+				except:
+					pass
+			except:
+				pass
+
 			job = {
 				"jobTitle": jobTitle,
 				"experience": {
-					"years": int(yearExperience),
+					"years": yearExperience,
 					"position": experiencePosition
 				},
 				"company":{
 					"name": comName,
 					"picture": comPicture,
-					"location": comLocation
-				}
+					"location": comLocation,
+					"industry": comIndustry,
+					"site": comSite,
+					"employee": comSize
+				},
+				"jobDesc": jobDesc,
+				"processTime": processTime,
+				"dresscode": dresscode,
+				"workTime": workTime,
+				"support": tunjangan,
+				"language": language
 			}
 
 			error = 11
