@@ -32,6 +32,8 @@ def getVacancyDetail(url, options):
 	comSize = ""
 	processTime = ""
 	comIndustry = ""
+	comProfile = ""
+	comLocationMap = ""
 
 	error  = 0
 	while(error < 10):
@@ -67,8 +69,14 @@ def getVacancyDetail(url, options):
 				comLocation = driver.find_element_by_xpath(".//div[@id='location']//span[@id='single_work_location']").text
 			except:
 				pass
+			
 			try:
 				comPicture = driver.find_element_by_xpath(".//div[@class='logo_sm_wrap']/img[@id='company_logo']").get_attribute("src")
+			except:
+				pass
+			
+			try:
+				comProfile = driver.find_element_by_xpath(".//div[@id='company_overview_all']").text
 			except:
 				pass
 
@@ -123,6 +131,12 @@ def getVacancyDetail(url, options):
 			except:
 				pass
 
+			# Get Location Map
+			try:
+				comLocationMap = driver.find_element_by_xpath(".//a[@id='view_larger_map']").get_attribute("href")
+			except:
+				pass
+
 			job = {
 				"jobTitle": jobTitle,
 				"experience": {
@@ -132,10 +146,14 @@ def getVacancyDetail(url, options):
 				"company":{
 					"name": comName,
 					"picture": comPicture,
-					"location": comLocation,
+					"location": {
+						"text": comLocation,
+						"map": comLocationMap
+					},
 					"industry": comIndustry,
 					"site": comSite,
-					"employee": comSize
+					"employee": comSize,
+					"description": comProfile
 				},
 				"jobDesc": jobDesc,
 				"processTime": processTime,
@@ -145,7 +163,7 @@ def getVacancyDetail(url, options):
 				"language": language
 			}
 
-			error = 11
+			break
 		except Exception as e:
 			error += 1
 			print("Error Getting Detail --- Try -", error)
