@@ -150,6 +150,11 @@ def getVacancyDetail(url, options):
 				comLocationMap = driver.find_element_by_xpath(".//a[@id='view_larger_map']").get_attribute("href")
 			except:
 				pass
+
+			# Get Publish Date
+			publish = driver.find_element_by_xpath(".//p[@id='posting_date']/span").text
+			formattedDate = datetime.datetime.strptime(publish, "%d-%B-%Y")
+			formattedMs = formattedDate.timestamp()*1000
 			
 			# Make ID for Data
 			jobId_raw = url.split("?")[0]
@@ -180,7 +185,9 @@ def getVacancyDetail(url, options):
 				"dresscode": dresscode,
 				"workTime": workTime,
 				"support": tunjangan,
-				"language": language
+				"language": language,
+				"datetime_publish": formattedDate,
+				"datetime_publish_ms": formattedMs
 			}
 
 			break
@@ -292,7 +299,7 @@ def getJobVacancy(baseUrl, page):
 @app.route('/job', methods=['GET'])
 def mainRMQ():	
 	# page = int(request.args["page"]) if 'page' in request.args else 1
-	page = os.environ['PAGE_CRAWL'] if os.environ['PAGE_CRAWL'] > 0 else 1
+	page = int(os.environ['PAGE_CRAWL']) if int(os.environ['PAGE_CRAWL']) > 0 else 1
 
 	url = "https://www.jobstreet.co.id/id/job-search/job-vacancy.php"
 	getJobVacancy(url, page)
@@ -302,7 +309,6 @@ def mainRMQ():
 	time.sleep(waitTime*60)
 
 	# return json.dumps({"status":1})
-
 
 
 if __name__ == '__main__':
