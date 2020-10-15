@@ -33,6 +33,7 @@ services:
       - MONGO_USERNAME=
       - MONGO_PASSWORD=
       - THREADS_NUMBER=1
+      - PAGE_CRAWL=1
       - PORT=5050
     depends_on: 
       - mongodb_jobstreet

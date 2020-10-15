@@ -282,9 +282,6 @@ def getJobVacancy(baseUrl, page):
 		print(url)
 		driver.get(url)
 
-	print(jobs)
-	data = jobs
-
 	if(len(jobs) > 0):
 		insertMongo("job-vacancy", jobs)
 	
@@ -292,29 +289,32 @@ def getJobVacancy(baseUrl, page):
 	driver.close()
 	driver.quit()
 
-	return data
-
 @app.route('/job', methods=['GET'])
 def mainRMQ():	
-	page = int(request.args["page"]) if 'page' in request.args else 1
+	# page = int(request.args["page"]) if 'page' in request.args else 1
+	page = os.environ['PAGE_CRAWL'] if os.environ['PAGE_CRAWL'] > 0 else 1
 
 	url = "https://www.jobstreet.co.id/id/job-search/job-vacancy.php"
-	inner = getJobVacancy(url, page)
+	getJobVacancy(url, page)
 
-	return json.dumps({"status":1})
+	waitTime = random.randrange(10, 20)
+	print("Sleep for {sleep} Minutes".format(sleep=waitTime))
+	time.sleep(waitTime*60)
+
+	# return json.dumps({"status":1})
 
 
-
-# if __name__ == '__main__':
-# 	try:
-# 		mainRMQ()
-# 	except KeyboardInterrupt:
-# 		print('Interrupted')
-# 		try:
-# 			sys.exit(0)
-# 		except SystemExit:
-# 			os._exit(0)
 
 if __name__ == '__main__':
-	# test()
-	app.run(host='0.0.0.0', port=openport, debug=False, threaded=True)
+	try:
+		mainRMQ()
+	except KeyboardInterrupt:
+		print('Interrupted')
+		try:
+			sys.exit(0)
+		except SystemExit:
+			os._exit(0)
+
+# if __name__ == '__main__':
+# 	# test()
+# 	app.run(host='0.0.0.0', port=openport, debug=False, threaded=True)
